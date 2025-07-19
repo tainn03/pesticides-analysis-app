@@ -18,6 +18,36 @@ A Next.js application for analyzing plant pests and diseases using AI. Users can
 - **Loading States**: Smooth user experience with loading indicators
 - **Error Handling**: Comprehensive error handling and validation
 
+## Application Demo
+
+### 📝 Text Analysis Mode
+Users can describe their plant's symptoms and get detailed analysis:
+
+![Text Analysis Demo](./evidence/aitext.jpeg)
+
+**Features shown:**
+- Crop type input field
+- Detailed symptom description
+- Real-time validation with React Hook Form
+- Comprehensive analysis results with treatment recommendations
+
+### 📷 Image Analysis Mode
+Advanced visual analysis by uploading plant images:
+
+![Image Analysis Demo](./evidence/aiimage.jpeg)
+
+**Features shown:**
+- Drag & drop image upload interface
+- Image preview and validation
+- AI-powered visual disease detection
+- Detailed pest identification with treatment plans
+
+Both modes provide:
+- ✅ **Comprehensive Analysis**: Disease/pest identification with confidence levels
+- 🛡️ **Treatment Plans**: Step-by-step treatment methods and product recommendations
+- ⏰ **Application Timing**: When and how to apply treatments
+- ⚠️ **Safety Guidelines**: Important safety notes and precautions
+
 ## Getting Started
 
 ### Prerequisites
