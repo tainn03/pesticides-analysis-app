@@ -4,14 +4,17 @@ A Next.js application for analyzing plant pests and diseases using AI. Users can
 
 ## Features
 
-- **Crop Analysis Form**: Input crop type and symptoms
-- **AI-Powered Analysis**: Get detailed pest/disease identification
+- **Dual Analysis Modes**: 
+  - **Text Mode**: Traditional input with crop type and symptom description
+  - **Image Mode**: Upload plant images for AI-powered visual analysis
+- **AI-Powered Analysis**: Get detailed pest/disease identification using Google AI (Gemini)
+- **Image Upload**: Drag & drop or click to upload plant images (JPG, PNG, GIF up to 10MB)
 - **Treatment Recommendations**: Comprehensive treatment plans including:
   - Treatment methods
   - Recommended products
   - Application timing and dosage
   - Safety notes
-- **Modern UI**: Built with shadcn/ui components
+- **Modern UI**: Built with shadcn/ui components and responsive design
 - **Loading States**: Smooth user experience with loading indicators
 - **Error Handling**: Comprehensive error handling and validation
 

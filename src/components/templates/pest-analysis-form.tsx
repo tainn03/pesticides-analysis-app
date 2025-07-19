@@ -1,50 +1,93 @@
 "use client"
 
 import { useCallback, useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { ImageUpload } from "@/components/ui/image-upload"
 import { PestAnalysisRequest, PestAnalysisResponse } from "@/types/pest-analysis"
-import { Bug, Leaf, AlertTriangle, Shield, Clock, Droplets, Info } from "lucide-react"
+import { PestAnalysisFormData, pestAnalysisSchema } from "@/schemas/pest-analysis-schema"
+import { Bug, Leaf, AlertTriangle, Shield, Clock, Droplets, Info, FileText, Camera } from "lucide-react"
+import { fileToBase64 } from "@/utils/image"
 import { pestAnalysis } from "@/adapter/pest-analysis"
+import { CropTypeController } from "../organisms/crop-type-controller"
+import { SymptomsController } from "../organisms/symptoms-controller"
 
 export function PestAnalysisForm() {
-  const [formData, setFormData] = useState<PestAnalysisRequest>({
-    cropType: "",
-    symptoms: ""
-  })
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<PestAnalysisResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!formData.cropType.trim() || !formData.symptoms.trim()) {
-      setError("Vui lòng điền đầy đủ thông tin về cây trồng và triệu chứng")
-      return
-    }
+  const defaultValues: PestAnalysisFormData = {
+    cropType: "",
+    analysisType: "text",
+    symptoms: "",
+  };
 
+  const {
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors, isValid }
+  } = useForm<PestAnalysisFormData>({
+    resolver: zodResolver(pestAnalysisSchema),
+    defaultValues: defaultValues,
+    mode: "onChange"
+  })
+
+  const analysisType = watch("analysisType")
+
+  const onSubmit = useCallback(async (data: PestAnalysisFormData) => {
     setLoading(true)
     setError(null)
     setResult(null)
 
     try {
-      const response = await pestAnalysis(formData)
+      const requestData: PestAnalysisRequest = {
+        cropType: data.cropType,
+        symptoms: data.symptoms || "",
+        analysisType: data.analysisType,
+        imageBase64: data.analysisType === 'image' ? (data.imageBase64 || undefined) : undefined,
+        imageMimeType: data.analysisType === 'image' ? (data.imageMimeType || undefined) : undefined
+      }
+
+      const response = await pestAnalysis(requestData);
       setResult(response)
-    } catch {
-      setError("Có lỗi xảy ra khi phân tích. Vui lòng thử lại.")
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Có lỗi xảy ra khi phân tích. Vui lòng thử lại.")
     } finally {
       setLoading(false)
     }
-  }, [formData]);
+  }, [setLoading, setError, setResult]);
 
-  const handleInputChange = useCallback((field: keyof PestAnalysisRequest, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+  const handleTabChange = useCallback((value: string) => {
+    const tabValue = value as 'text' | 'image'
+    setValue("analysisType", tabValue)
+    setValue("symptoms", "")
+    setValue("imageBase64", "")
+    setValue("imageMimeType", "")
     setError(null)
-  }, []);
+    setResult(null)
+
+  }, [setValue, setError, setResult]);
+
+  const handleImageSelect = useCallback(async (file: File | null, base64: string | null, mimeType?: string) => {
+    if (file && !base64) {
+      const convertedBase64 = await fileToBase64(file);
+      setValue("imageBase64", convertedBase64)
+      setValue("imageMimeType", file.type)
+      setValue("symptoms", `Hình ảnh: ${file.name}`)
+    } else {
+      setValue("imageBase64", base64 || "")
+      setValue("imageMimeType", mimeType || "")
+      setValue("symptoms", `Hình ảnh`)
+    }
+    setError(null);
+  }, [setValue, setError]);
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
@@ -69,55 +112,79 @@ export function PestAnalysisForm() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="cropType" className="text-sm font-medium">
-                Tên cây trồng *
-              </label>
-              <Input
-                id="cropType"
-                placeholder="Ví dụ: lúa, ngô, cà chua, ớt..."
-                value={formData.cropType}
-                onChange={(e) => handleInputChange("cropType", e.target.value)}
-                className="w-full"
-              />
-            </div>
+          <Tabs value={analysisType} onValueChange={handleTabChange} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="text" className="flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Mô tả bằng văn bản
+              </TabsTrigger>
+              <TabsTrigger value="image" className="flex items-center gap-2">
+                <Camera className="w-4 h-4" />
+                Tải lên hình ảnh
+              </TabsTrigger>
+            </TabsList>
 
-            <div className="space-y-2">
-              <label htmlFor="symptoms" className="text-sm font-medium">
-                Mô tả triệu chứng *
-              </label>
-              <Textarea
-                id="symptoms"
-                placeholder="Mô tả chi tiết các dấu hiệu bất thường: màu sắc lá, vết đốm, sự xuất hiện của côn trùng, tình trạng cây..."
-                value={formData.symptoms}
-                onChange={(e) => handleInputChange("symptoms", e.target.value)}
-                className="w-full min-h-[120px]"
-              />
-            </div>
-
-            {error && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-700">
-                <AlertTriangle className="w-4 h-4" />
-                <span className="text-sm">{error}</span>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-6">
+              <div className="space-y-2">
+                <label htmlFor="cropType" className="text-sm font-medium">
+                  Tên cây trồng *
+                </label>
+                <CropTypeController control={control} error={errors.cropType} disabled={loading} />
               </div>
-            )}
 
-            <Button 
-              type="submit" 
-              disabled={loading} 
-              className="w-full"
-            >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <LoadingSpinner size="sm" />
-                  Đang phân tích...
+              <TabsContent value="text" className="space-y-4 mt-0">
+                <div className="space-y-2">
+                  <label htmlFor="symptoms" className="text-sm font-medium">
+                    Mô tả triệu chứng *
+                  </label>
+                  <SymptomsController control={control} error={errors.symptoms} disabled={loading} />
                 </div>
-              ) : (
-                "Phân tích sâu bệnh"
+              </TabsContent>
+
+              <TabsContent value="image" className="space-y-4 mt-0">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Hình ảnh cây trồng *
+                  </label>
+                  <ImageUpload
+                    onImageSelect={handleImageSelect}
+                    error={errors.imageBase64?.message || errors.imageMimeType?.message}
+                    disabled={loading}
+                  />
+                  {(errors.imageBase64 || errors.imageMimeType) && (
+                    <p className="text-sm text-red-600">
+                      {errors.imageBase64?.message || errors.imageMimeType?.message}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-500">
+                    Tải lên hình ảnh rõ nét của cây trồng bị bệnh để AI có thể phân tích chính xác
+                  </p>
+                </div>
+              </TabsContent>
+
+              {error && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-700">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span className="text-sm">{error}</span>
+                </div>
               )}
-            </Button>
-          </form>
+
+              <Button 
+                type="submit" 
+                disabled={loading || !isValid} 
+                className="w-full"
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <LoadingSpinner size="sm" />
+                    Đang phân tích...
+                  </div>
+                ) : (
+                  "Phân tích sâu bệnh"
+                )}
+              </Button>
+            </form>
+          </Tabs>
         </CardContent>
       </Card>
 

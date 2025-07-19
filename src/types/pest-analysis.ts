@@ -1,6 +1,10 @@
 export interface PestAnalysisRequest {
   cropType: string;
   symptoms: string;
+  analysisType?: 'text' | 'image';
+  imageFile?: File;
+  imageBase64?: string;
+  imageMimeType?: string;
 }
 
 export interface Treatment {
