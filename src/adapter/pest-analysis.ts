@@ -1,4 +1,4 @@
-import { PestAnalysisRequest, PestAnalysisResponse } from "@/types/pest-analysis";
+import { PestAnalysisRequest, PestAnalysisResponse, ImplementationPlanRequest, ImplementationPlanResponse } from "@/types/pest-analysis";
 import { post } from "@/utils/api";
 
 export async function getPestAnalysis(request: PestAnalysisRequest): Promise<PestAnalysisResponse> {
@@ -14,4 +14,8 @@ export const getPestAnalysisByText = async (request: PestAnalysisRequest): Promi
 
 export const getPestAnalysisByImage = async (request: PestAnalysisRequest): Promise<PestAnalysisResponse> => {
   return await post<PestAnalysisResponse>('/api/pest/analyze/image', request);
+}
+
+export const getImplementationPlan = async (request: ImplementationPlanRequest): Promise<ImplementationPlanResponse> => {
+  return await post<ImplementationPlanResponse>('/api/pest/plan', request);
 }

@@ -29,3 +29,31 @@ export interface PestAnalysisResponse {
   possiblePestsOrDiseases: PestOrDisease[];
   additionalInfo: string;
 }
+
+export interface ImplementationPlanRequest {
+  pestOrDisease: PestOrDisease;
+  cropType: string;
+  currentDate: string;
+}
+
+export interface ImplementationStep {
+  day: number;
+  date: string;
+  title: string;
+  description: string;
+  tasks: string[];
+  materials: string[];
+  notes?: string;
+  isUrgent?: boolean;
+}
+
+export interface ImplementationPlanResponse {
+  cropType: string;
+  pestName: string;
+  planStartDate: string;
+  planEndDate: string;
+  totalDuration: number;
+  steps: ImplementationStep[];
+  generalNotes: string;
+  successIndicators: string[];
+}

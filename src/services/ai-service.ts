@@ -1,5 +1,5 @@
-import { getImageAiPrompt, getInValidResponse, getTextAiPrompt } from "@/constants/prompts";
-import { PestAnalysisRequest, PestAnalysisResponse } from "@/types/pest-analysis";
+import { getImageAiPrompt, getInValidResponse, getTextAiPrompt, getImplementationPlanPrompt } from "@/constants/prompts";
+import { PestAnalysisRequest, PestAnalysisResponse, ImplementationPlanRequest, ImplementationPlanResponse } from "@/types/pest-analysis";
 import { post } from "@/utils/api";
 import { detectMimeTypeFromBase64 } from "@/utils/image";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -34,12 +34,35 @@ export async function analyzeImageService(body: PestAnalysisRequest): Promise<Pe
         },
     };
 
-    const { response } = await model.generateContent([prompt, imagePart]);
+    const result = await model.generateContent([prompt, imagePart]);
 
-    const content = response.text();
-    if (content === 'Hình ảnh được cung cấp không hợp lệ') {
-        return getInValidResponse(body.cropType);
+    const content = result.response.text();
+    if (!content || content.includes('không hợp lệ')) {
+        return getInValidResponse(body.cropType, content);
     } else {
         return await analyzeTextService({ cropType: body.cropType, symptoms: content });
     }
+}
+
+export async function generateImplementationPlan(body: ImplementationPlanRequest): Promise<ImplementationPlanResponse> {
+    const aiPrompt = getImplementationPlanPrompt(
+        body.pestOrDisease.name,
+        body.cropType,
+        body.pestOrDisease.treatment,
+        body.currentDate
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const aiResponse: any = await post(
+        `${process.env.GEMINI_API_URL}`,
+        aiPrompt,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-goog-api-key': `${process.env.GEMINI_API_KEY}`,
+            }
+        }
+    );
+
+    return JSON.parse(aiResponse.candidates[0].content.parts[0].text);
 }

@@ -1,3 +1,5 @@
+import { Treatment } from "@/types/pest-analysis";
+
 export function getTextAiPrompt(symptoms: string, cropType: string) {
     return {
         "contents": [
@@ -111,14 +113,140 @@ export function getTextAiPrompt(symptoms: string, cropType: string) {
 };
 
 export function getImageAiPrompt(cropType: string) {
-    return `Dựa trên hình ảnh cây trồng và loại cây '${cropType}', thực hiện phân tích để nhận diện các dấu hiệu bất thường và đề xuất danh sách các loại sâu bệnh hoặc bệnh lý cây trồng có thể xảy ra. Nếu hình ảnh không có liên quan, hãy phản hồi rằng "Hình ảnh được cung cấp không hợp lệ".`
+    return `Dựa trên hình ảnh cây trồng và loại cây '${cropType}', thực hiện phân tích để nhận diện các dấu hiệu bất thường và đề xuất danh sách các loại sâu bệnh hoặc bệnh lý cây trồng có thể xảy ra. Nếu hình ảnh không có liên quan hoặc không phải loại cây '${cropType}', hãy phản hồi rằng "Hình ảnh được cung cấp không hợp lệ".`
 };
 
-export function getInValidResponse(cropType: string) {
+export function getInValidResponse(cropType: string, content: string) {
     return {
-        cropType: cropType || 'Không có thông tin',
-        cropSymptom: 'Không có thông tin',
+        cropType: cropType,
+        cropSymptom: content,
         possiblePestsOrDiseases: [],
         additionalInfo: 'Không có thông tin'
+    };
+}
+
+export function getImplementationPlanPrompt(pestName: string, cropType: string, treatment: Treatment, currentDate: string) {
+    return {
+        "contents": [
+            {
+                "parts": [
+                    {
+                        "text": `Dựa trên thông tin về sâu bệnh '${pestName}' trên cây '${cropType}' và biện pháp xử lý đã được đề xuất, hãy tạo một kế hoạch triển khai chi tiết theo từng ngày. Ngày hiện tại là ${currentDate}. 
+
+Thông tin biện pháp xử lý:
+- Phương pháp: ${treatment.method}
+- Sản phẩm khuyến nghị: ${treatment.recommendedProducts.join(', ')}
+- Thời điểm áp dụng: ${treatment.applicationTiming}
+- Liều lượng: ${treatment.dosage}
+- Lưu ý an toàn: ${treatment.safetyNotes}
+
+Hãy tạo một kế hoạch thực hiện chi tiết từ ngày ${currentDate}, bao gồm các bước chuẩn bị, triển khai, theo dõi và đánh giá hiệu quả. Mỗi bước phải có ngày cụ thể, mô tả công việc, danh sách vật tư cần thiết và ghi chú quan trọng.`
+                    }
+                ]
+            }
+        ],
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "responseSchema": {
+                "type": "OBJECT",
+                "properties": {
+                    "cropType": {
+                        "type": "STRING",
+                        "description": "Tên cây trồng. Bắt buộc điền."
+                    },
+                    "pestName": {
+                        "type": "STRING",
+                        "description": "Tên sâu bệnh cần xử lý. Bắt buộc điền."
+                    },
+                    "planStartDate": {
+                        "type": "STRING",
+                        "description": "Ngày bắt đầu kế hoạch (định dạng YYYY-MM-DD). Bắt buộc điền."
+                    },
+                    "planEndDate": {
+                        "type": "STRING",
+                        "description": "Ngày kết thúc kế hoạch (định dạng YYYY-MM-DD). Bắt buộc điền."
+                    },
+                    "totalDuration": {
+                        "type": "INTEGER",
+                        "description": "Tổng thời gian thực hiện kế hoạch (số ngày). Bắt buộc điền."
+                    },
+                    "steps": {
+                        "type": "ARRAY",
+                        "items": {
+                            "type": "OBJECT",
+                            "properties": {
+                                "day": {
+                                    "type": "INTEGER",
+                                    "description": "Ngày thứ mấy trong kế hoạch (bắt đầu từ 1). Bắt buộc điền."
+                                },
+                                "date": {
+                                    "type": "STRING",
+                                    "description": "Ngày thực hiện (định dạng YYYY-MM-DD). Bắt buộc điền."
+                                },
+                                "title": {
+                                    "type": "STRING",
+                                    "description": "Tiêu đề công việc của ngày đó. Bắt buộc điền."
+                                },
+                                "description": {
+                                    "type": "STRING",
+                                    "description": "Mô tả chi tiết công việc cần làm. Bắt buộc điền."
+                                },
+                                "tasks": {
+                                    "type": "ARRAY",
+                                    "items": {
+                                        "type": "STRING",
+                                        "description": "Danh sách các nhiệm vụ cụ thể trong ngày."
+                                    }
+                                },
+                                "materials": {
+                                    "type": "ARRAY",
+                                    "items": {
+                                        "type": "STRING",
+                                        "description": "Danh sách vật tư, dụng cụ cần thiết."
+                                    }
+                                },
+                                "notes": {
+                                    "type": "STRING",
+                                    "description": "Ghi chú quan trọng (tuỳ chọn)."
+                                },
+                                "isUrgent": {
+                                    "type": "BOOLEAN",
+                                    "description": "Có phải công việc khẩn cấp không (tuỳ chọn)."
+                                }
+                            },
+                            "required": [
+                                "day",
+                                "date",
+                                "title",
+                                "description",
+                                "tasks",
+                                "materials"
+                            ]
+                        }
+                    },
+                    "generalNotes": {
+                        "type": "STRING",
+                        "description": "Ghi chú chung cho toàn bộ kế hoạch. Bắt buộc điền."
+                    },
+                    "successIndicators": {
+                        "type": "ARRAY",
+                        "items": {
+                            "type": "STRING",
+                            "description": "Các dấu hiệu cho thấy kế hoạch thành công."
+                        }
+                    }
+                },
+                "required": [
+                    "cropType",
+                    "pestName",
+                    "planStartDate",
+                    "planEndDate",
+                    "totalDuration",
+                    "steps",
+                    "generalNotes",
+                    "successIndicators"
+                ]
+            }
+        }
     };
 }
