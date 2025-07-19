@@ -106,5 +106,14 @@ export function getTextAiPrompt(symptoms: string, cropType: string) {
 };
 
 export function getImageAiPrompt(cropType: string) {
-    return `Dựa trên hình ảnh cây trồng và loại cây '${cropType}', thực hiện phân tích để nhận diện các dấu hiệu bất thường và đề xuất danh sách các loại sâu bệnh hoặc bệnh lý cây trồng có thể xảy ra.`
+    return `Dựa trên hình ảnh cây trồng và loại cây '${cropType}', thực hiện phân tích để nhận diện các dấu hiệu bất thường và đề xuất danh sách các loại sâu bệnh hoặc bệnh lý cây trồng có thể xảy ra. Nếu hình ảnh không có liên quan, hãy phản hồi rằng "Hình ảnh được cung cấp không hợp lệ".`
 };
+
+export function getInValidResponse(cropType: string) {
+    return {
+        cropType: cropType || 'Không có thông tin',
+        cropSymptom: 'Không có thông tin',
+        possiblePestsOrDiseases: [],
+        additionalInfo: 'Không có thông tin'
+    };
+}

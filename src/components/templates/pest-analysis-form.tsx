@@ -12,7 +12,7 @@ import { PestAnalysisRequest, PestAnalysisResponse } from "@/types/pest-analysis
 import { PestAnalysisFormData, pestAnalysisSchema } from "@/schemas/pest-analysis-schema"
 import { Bug, Leaf, AlertTriangle, Shield, Clock, Droplets, Info, FileText, Camera } from "lucide-react"
 import { fileToBase64 } from "@/utils/image"
-import { pestAnalysis } from "@/adapter/pest-analysis"
+import { getPestAnalysis } from "@/adapter/pest-analysis"
 import { CropTypeController } from "../organisms/crop-type-controller"
 import { SymptomsController } from "../organisms/symptoms-controller"
 
@@ -55,7 +55,7 @@ export function PestAnalysisForm() {
         imageMimeType: data.analysisType === 'image' ? (data.imageMimeType || undefined) : undefined
       }
 
-      const response = await pestAnalysis(requestData);
+      const response = await getPestAnalysis(requestData);
       setResult(response)
     } catch (error) {
       setError(error instanceof Error ? error.message : "Có lỗi xảy ra khi phân tích. Vui lòng thử lại.")
