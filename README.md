@@ -1,36 +1,155 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pesticides Analysis App
+
+A Next.js application for analyzing plant pests and diseases using AI. Users can input crop information and symptoms to receive detailed analysis and treatment recommendations.
+
+## Features
+
+- **Crop Analysis Form**: Input crop type and symptoms
+- **AI-Powered Analysis**: Get detailed pest/disease identification
+- **Treatment Recommendations**: Comprehensive treatment plans including:
+  - Treatment methods
+  - Recommended products
+  - Application timing and dosage
+  - Safety notes
+- **Modern UI**: Built with shadcn/ui components
+- **Loading States**: Smooth user experience with loading indicators
+- **Error Handling**: Comprehensive error handling and validation
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ 
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd pesticides
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.local.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Start the development server:
+```bash
+npm run dev
+```
 
-## Learn More
+5. Open [http://localhost:3000](http://localhost:3000) with your browser.
 
-To learn more about Next.js, take a look at the following resources:
+## AI Integration
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Currently, the app uses mock data for demonstration. To integrate with a real AI service:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Option 1: Google AI (Gemini)
 
-## Deploy on Vercel
+1. Get an API key from [Google AI Studio](https://aistudio.google.com/)
+2. Add to `.env.local`:
+```bash
+GOOGLE_AI_API_KEY=your_api_key_here
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. Uncomment and modify the API call in `src/app/api/analyze-pest/route.ts`:
+```typescript
+const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${process.env.GOOGLE_AI_API_KEY}`
+  },
+  body: JSON.stringify(aiPrompt)
+});
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Option 2: OpenAI
+
+1. Get an API key from [OpenAI](https://platform.openai.com/)
+2. Install OpenAI SDK:
+```bash
+npm install openai
+```
+
+3. Modify the API route to use OpenAI's structured output format
+
+### Option 3: Other AI Services
+
+The app is designed to work with any AI service that can return structured JSON. The prompt and schema are provided in the API route for easy integration.
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── api/analyze-pest/    # API route for pest analysis
+│   ├── globals.css          # Global styles
+│   ├── layout.tsx           # Root layout
+│   └── page.tsx             # Main page
+├── components/
+│   ├── ui/                  # shadcn/ui components
+│   └── pest-analysis-form.tsx # Main form component
+├── types/
+│   └── pest-analysis.ts     # TypeScript types
+└── lib/
+    └── utils.ts             # Utility functions
+```
+
+## API Schema
+
+The AI response must follow this exact schema:
+
+```typescript
+interface PestAnalysisResponse {
+  cropType: string;
+  cropSymptom: string;
+  possiblePestsOrDiseases: Array<{
+    name: string;
+    cause: string;
+    impact: string;
+    treatment: {
+      method: string;
+      recommendedProducts: string[];
+      applicationTiming: string;
+      dosage: string;
+      safetyNotes: string;
+    };
+  }>;
+  additionalInfo: string;
+}
+```
+
+## Technologies Used
+
+- **Framework**: Next.js 15 with App Router
+- **UI Components**: shadcn/ui
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **Language**: TypeScript
+
+## Development
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+MIT License
