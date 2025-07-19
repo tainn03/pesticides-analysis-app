@@ -20,6 +20,7 @@ export interface PestOrDisease {
   cause: string;
   impact: string;
   treatment: Treatment;
+  probability: number;
 }
 
 export interface PestAnalysisResponse {

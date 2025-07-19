@@ -204,12 +204,19 @@ export function PestAnalysisForm() {
 
           <div className="grid gap-6">
             {result.possiblePestsOrDiseases.map((pest, index) => (
-              <Card key={index} className="border-l-4 border-l-orange-500">
+              <Card key={index} className="border-l-4 border-l-orange-500 relative">
+                {/* Probability badge in top-right */}
+                <div className="absolute top-4 right-4">
+                  <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full text-xs font-semibold shadow">
+                    Xác suất: {(pest.probability * 100).toFixed(0)}%
+                  </span>
+                </div>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-orange-700">
                     <Bug className="w-5 h-5" />
                     {pest.name}
                   </CardTitle>
+                  {/* probability removed from here */}
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
