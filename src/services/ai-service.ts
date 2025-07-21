@@ -33,15 +33,17 @@ export async function analyzeImageService(body: PestAnalysisRequest): Promise<Pe
             data: body.imageBase64 as string,
         },
     };
-
-    const result = await model.generateContent([prompt, imagePart]);
-
-    const content = result.response.text();
-    if (!content || content.includes('không hợp lệ')) {
-        return getInValidResponse(body.cropType, content);
-    } else {
-        return await analyzeTextService({ cropType: body.cropType, symptoms: content });
+    try {
+        const result = await model.generateContent([prompt, imagePart]);
+        const content = result.response.text();
+        if (!content.includes('không hợp lệ')) {
+            return await analyzeTextService({ cropType: body.cropType, symptoms: content });
+        }
+    } catch (error) {
+        console.error('Error generating content:', error);
+        return getInValidResponse(body.cropType, `Không thể phân tích hình ảnh`);
     }
+    return getInValidResponse(body.cropType, `Không thể phân tích hình ảnh`);
 }
 
 export async function generateImplementationPlan(body: ImplementationPlanRequest): Promise<ImplementationPlanResponse> {
