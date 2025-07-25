@@ -50,115 +50,67 @@ Both modes provide:
 
 ## Getting Started
 
-### Prerequisites
+You can run the app either locally (with Node.js) or using Docker.
 
-- Node.js 18+ 
-- npm or yarn
+### Option 1: Run with Docker
 
-### Installation
+1. **Create docker-compose.yml file:**
+   ```yml
+    // docker-compose.yml
+      services:
+        app:
+          image: registry.gitlab.com/tainn03/pesticides-app:v2
+          restart: unless-stopped
+          ports:
+            - "3000:3000"
+          env_file:
+            - .env
+   ```
 
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd pesticides
-```
+2. **Create and edit your environment file:**
+   ```bash
+   cp .env.example .env
+   ```
+   - Register for an API key (e.g., [Google AI Studio](https://aistudio.google.com/)) and add it to `.env`:
+     ```bash
+     // .env
+     GEMINI_API_KEY=your_api_key_here
+     ```
 
-2. Install dependencies:
-```bash
-npm install
-```
+3. **Run the Docker container:**
+   ```bash
+   docker compose up -d
+   ```
 
-3. Set up environment variables:
-```bash
-cp .env.local.example .env.local
-```
+4. **Open [http://localhost:3000](http://localhost:3000) in your browser.**
 
-4. Start the development server:
-```bash
-npm run dev
-```
+---
 
-5. Open [http://localhost:3000](http://localhost:3000) with your browser.
+### Option 2: Run Locally with Git
 
-## AI Integration
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd pesticides
+   ```
 
-Currently, the app uses mock data for demonstration. To integrate with a real AI service:
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-### Option 1: Google AI (Gemini)
+3. **Set up environment variables:**
+   ```bash
+   cp .env.example .env
+   ```
+   - Register for an API key and add it to `.env` as above.
 
-1. Get an API key from [Google AI Studio](https://aistudio.google.com/)
-2. Add to `.env.local`:
-```bash
-GOOGLE_AI_API_KEY=your_api_key_here
-```
+4. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
 
-3. Uncomment and modify the API call in `src/app/api/analyze-pest/route.ts`:
-```typescript
-const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${process.env.GOOGLE_AI_API_KEY}`
-  },
-  body: JSON.stringify(aiPrompt)
-});
-```
-
-### Option 2: OpenAI
-
-1. Get an API key from [OpenAI](https://platform.openai.com/)
-2. Install OpenAI SDK:
-```bash
-npm install openai
-```
-
-3. Modify the API route to use OpenAI's structured output format
-
-### Option 3: Other AI Services
-
-The app is designed to work with any AI service that can return structured JSON. The prompt and schema are provided in the API route for easy integration.
-
-## Project Structure
-
-```
-src/
-├── app/
-│   ├── api/analyze-pest/    # API route for pest analysis
-│   ├── globals.css          # Global styles
-│   ├── layout.tsx           # Root layout
-│   └── page.tsx             # Main page
-├── components/
-│   ├── ui/                  # shadcn/ui components
-│   └── pest-analysis-form.tsx # Main form component
-├── types/
-│   └── pest-analysis.ts     # TypeScript types
-└── lib/
-    └── utils.ts             # Utility functions
-```
-
-## API Schema
-
-The AI response must follow this exact schema:
-
-```typescript
-interface PestAnalysisResponse {
-  cropType: string;
-  cropSymptom: string;
-  possiblePestsOrDiseases: Array<{
-    name: string;
-    cause: string;
-    impact: string;
-    treatment: {
-      method: string;
-      recommendedProducts: string[];
-      applicationTiming: string;
-      dosage: string;
-      safetyNotes: string;
-    };
-  }>;
-  additionalInfo: string;
-}
-```
+5. **Open [http://localhost:3000](http://localhost:3000) in your browser.**
 
 ## Technologies Used
 
