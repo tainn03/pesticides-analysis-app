@@ -1,6 +1,6 @@
 services:
   app:
-    image: registry.gitlab.com/tainn03/pesticides-app:v1
+    image: registry.gitlab.com/tainn03/pesticides-app:v2
     restart: unless-stopped
     ports:
       - "3000:3000"
