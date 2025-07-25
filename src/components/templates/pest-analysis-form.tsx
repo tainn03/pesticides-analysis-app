@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useState, useRef, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
@@ -8,11 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { ImageUpload } from "@/components/ui/image-upload"
-import { PestAnalysisRequest, PestAnalysisResponse } from "@/types/pest-analysis"
+import { ImplementationTimeline } from "@/components/ui/implementation-timeline"
+import { PestAnalysisRequest, PestAnalysisResponse, PestOrDisease, ImplementationPlanResponse } from "@/types/pest-analysis"
 import { PestAnalysisFormData, pestAnalysisSchema } from "@/schemas/pest-analysis-schema"
-import { Bug, Leaf, AlertTriangle, Shield, Clock, Droplets, Info, FileText, Camera } from "lucide-react"
+import { Bug, Leaf, AlertTriangle, Shield, Clock, Droplets, Info, FileText, Camera, Sparkles } from "lucide-react"
 import { fileToBase64 } from "@/utils/image"
-import { getPestAnalysis } from "@/adapter/pest-analysis"
+import { getPestAnalysis, getImplementationPlan } from "@/adapter/pest-analysis"
 import { CropTypeController } from "../organisms/crop-type-controller"
 import { SymptomsController } from "../organisms/symptoms-controller"
 
@@ -20,6 +21,12 @@ export function PestAnalysisForm() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<PestAnalysisResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [implementationPlan, setImplementationPlan] = useState<ImplementationPlanResponse | null>(null)
+  const [loadingPlan, setLoadingPlan] = useState(false)
+  const [loadingTextIndex, setLoadingTextIndex] = useState(0)
+  const implementationPlanRef = useRef<HTMLDivElement>(null)
+
+  const loadingWords = 'AI đang phân tích sâu bệnh dựa trên dữ liệu cung cấp. Kết quả sẽ có trong giây lát...'.split('');
 
   const defaultValues: PestAnalysisFormData = {
     cropType: "",
@@ -72,8 +79,10 @@ export function PestAnalysisForm() {
     setValue("imageMimeType", "")
     setError(null)
     setResult(null)
+    setImplementationPlan(null)
+    implementationPlanRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
 
-  }, [setValue, setError, setResult]);
+  }, [setValue, setError, setResult, setImplementationPlan, implementationPlanRef]);
 
   const handleImageSelect = useCallback(async (file: File | null, base64: string | null, mimeType?: string) => {
     if (file && !base64) {
@@ -88,6 +97,42 @@ export function PestAnalysisForm() {
     }
     setError(null);
   }, [setValue, setError]);
+
+  const handleCreateImplementationPlan = useCallback(async (pestOrDisease: PestOrDisease) => {
+    if (!result) return;
+
+    setLoadingPlan(true);
+    try {
+      const currentDate = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      const planRequest = {
+        pestOrDisease,
+        cropType: result.cropType,
+        currentDate
+      };
+
+      const plan = await getImplementationPlan(planRequest);
+      setImplementationPlan(plan);
+      setTimeout(() => {
+        implementationPlanRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Có lỗi xảy ra khi tạo kế hoạch triển khai. Vui lòng thử lại.");
+    } finally {
+      setLoadingPlan(false);
+    }
+  }, [result]);
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingTextIndex(0)
+      return
+    }
+    const interval = setInterval(() => {
+      const nextStep = (loadingTextIndex + 1) % loadingWords.length;
+      if (nextStep !== 0) setLoadingTextIndex(nextStep);
+    }, 50);
+    return () => clearInterval(interval);
+  }, [loading, loadingTextIndex, loadingWords.length]);
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
@@ -169,18 +214,23 @@ export function PestAnalysisForm() {
                 </div>
               )}
 
-              <Button 
-                type="submit" 
-                disabled={loading || !isValid} 
+              <Button
+                type="submit"
+                disabled={loading || !isValid}
                 className="w-full"
               >
                 {loading ? (
                   <div className="flex items-center gap-2">
                     <LoadingSpinner size="sm" />
-                    Đang phân tích...
+                    <span>
+                      {loadingWords.slice(0, loadingTextIndex + 1).join("")}
+                    </span>
                   </div>
                 ) : (
-                  "Phân tích sâu bệnh"
+                  <>
+                      <Sparkles className="w-3 h-3 text-yellow-700" />
+                      Phân tích sâu bệnh
+                  </>
                 )}
               </Button>
             </form>
@@ -204,7 +254,13 @@ export function PestAnalysisForm() {
 
           <div className="grid gap-6">
             {result.possiblePestsOrDiseases.map((pest, index) => (
-              <Card key={index} className="border-l-4 border-l-orange-500">
+              <Card key={index} className="border-l-4 border-l-orange-500 relative">
+                {/* Probability badge in top-right */}
+                <div className="absolute top-4 right-4">
+                  <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full text-xs font-semibold shadow">
+                    Xác suất: {(pest.probability * 100).toFixed(0)}%
+                  </span>
+                </div>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-orange-700">
                     <Bug className="w-5 h-5" />
@@ -228,7 +284,7 @@ export function PestAnalysisForm() {
                       <Shield className="w-4 h-4 text-blue-600" />
                       Biện pháp xử lý
                     </h4>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <h5 className="font-medium text-sm text-gray-700 mb-1">Phương pháp:</h5>
@@ -240,7 +296,7 @@ export function PestAnalysisForm() {
                           <h5 className="font-medium text-sm text-gray-700 mb-1">Sản phẩm khuyến nghị:</h5>
                           <div className="flex flex-wrap gap-2">
                             {pest.treatment.recommendedProducts.map((product, idx) => (
-                              <span 
+                              <span
                                 key={idx}
                                 className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs"
                               >
@@ -275,6 +331,24 @@ export function PestAnalysisForm() {
                         </h5>
                         <p className="text-sm text-yellow-700">{pest.treatment.safetyNotes}</p>
                       </div>
+
+                      <Button
+                        onClick={() => handleCreateImplementationPlan(pest)}
+                        disabled={loadingPlan}
+                        className="font-medium text-sm mb-1 flex items-center gap-1 shadow-sm bg-white hover:bg-gray-100 text-gray-700 hover:cursor-pointer"
+                      >
+                        {loadingPlan ? (
+                          <>
+                            <LoadingSpinner size="sm" />
+                            Đang tạo kế hoạch...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3 h-3 text-purple-700" />
+                            Lập kế hoạch triển khai
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -295,6 +369,12 @@ export function PestAnalysisForm() {
               </CardContent>
             </Card>
           )}
+        </div>
+      )}
+
+      {implementationPlan && (
+        <div className="mt-6" ref={implementationPlanRef}>
+          <ImplementationTimeline plan={implementationPlan} />
         </div>
       )}
     </div>
