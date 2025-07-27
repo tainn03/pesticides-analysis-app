@@ -1,5 +1,7 @@
 # Pesticides Analysis App
 
+> 🚀 **Try it online:** Access the deployed app at [https://pesticides-ai.vercel.app](https://pesticides-ai.vercel.app)
+
 A Next.js application for analyzing plant pests and diseases using AI. Users can input crop information and symptoms to receive detailed analysis and treatment recommendations.
 
 ## Features
